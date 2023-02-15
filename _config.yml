@@ -48,7 +48,7 @@ social:
     # - https://www.facebook.com/username
     # - https://www.linkedin.com/in/username
 
-google_site_verification:               # fill in to your verification string
+google_site_verification: Z9lQMj7n__rzndmQMJ5XzQYb6Sai_ay80STRT0bDKyY              # fill in to your verification string
 
 # ↑ --------------------------
 # The end of `jekyll-seo-tag` settings
@@ -81,7 +81,7 @@ theme_mode: dark  # [light|dark]
 img_cdn: 'https://chirpy-img.netlify.app'
 
 # the avatar on sidebar, support local or CORS resources
-avatar: /assets/profile/profile1.jpg
+avatar: '/assets/profile/profile1.jpg'
 # '/commons/avatar.jpg'
 
 # boolean type, the global switch for ToC in posts.
