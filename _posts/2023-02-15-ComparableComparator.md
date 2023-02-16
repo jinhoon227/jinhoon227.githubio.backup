@@ -2,7 +2,7 @@
 layout: post
 title:  "JAVA[자바] Comparable 과 Comparator"
 categories: JAVA
-tags : java, comparable, comparator, sort, 정렬, 비교, 백준
+tags : java comparable comparator sort 정렬 비교 백준
 ---
 
 # Comparable Comparator
