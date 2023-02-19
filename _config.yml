@@ -77,12 +77,12 @@ theme_mode: dark  # [light|dark]
 # Notice that once it is assigned, the CDN url
 # will be added to all image (site avatar & posts' images) paths starting with '/'
 #
+# 'https://chirpy-img.netlify.app'
 # e.g. 'https://cdn.com'
 img_cdn:
-# 'https://chirpy-img.netlify.app'
 
 # the avatar on sidebar, support local or CORS resources
-avatar: /assets/img/profile1.jpg
+avatar: /assets/img/profile/profile1.jpg
 # '/commons/avatar.jpg'
 
 # boolean type, the global switch for ToC in posts.
