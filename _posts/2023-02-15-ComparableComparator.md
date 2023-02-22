@@ -5,7 +5,7 @@ categories: JAVA
 tags : java comparable comparator sort 정렬 비교 백준
 ---
 
-# Comparable Comparator
+## Comparable 과 Comparator
 
 코딩테스트나 개발하면서 기본으로 제공되는 정렬로 해결이 안되는 경우가 많다.
 그때 `Comparable`, `Comparator` 를 활용해 커스텀 정렬 기준을 만들어 사용할 수 있다.
@@ -337,5 +337,5 @@ class Student implements Comparable<Student> {
 }
 ```
 
-### Reference
+## Reference
 [https://st-lab.tistory.com/243](https://st-lab.tistory.com/243)
