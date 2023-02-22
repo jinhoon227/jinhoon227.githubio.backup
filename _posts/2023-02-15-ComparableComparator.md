@@ -7,10 +7,12 @@ tags : java comparable comparator sort 정렬 비교 백준
 
 # Comparable Comparator
 
-코딩테스트 문제나 개발하면서 기본으로 제공되는 정렬로 해결이 안되는 경우가 많다.
-그때 Comparable, Comparator 를 활용해 커스텀 정렬 기준을 만들어 사용할 수 있다.
+코딩테스트나 개발하면서 기본으로 제공되는 정렬로 해결이 안되는 경우가 많다.
+그때 `Comparable`, `Comparator` 를 활용해 커스텀 정렬 기준을 만들어 사용할 수 있다.
 
-참고로 Comparable, Comparator 는 인터페이스로 무조건 구현이 필요하다.
+`Comparable` 이나 `Comparator` 둘 다 비교해주는 기능은 동일하다. 단순히 비교기능만 필요하다면 어떤것을 사용하든 상관없다.
+참고로 `Comparable`, `Comparator` 는 인터페이스로 무조건 구현이 필요하다.
+
 
 ## Comparable
 ```java
@@ -22,6 +24,9 @@ public interface Comparable<T> {
 사용한다면 해당 함수를 구현해줘야 한다. 그리고 매개변수가 단 **한 개** 만`(T o)` 있다!
 비교대상이 자기자신과 `(T o)` 이기 때문이다. 그래서 자기자신과 비교할 `o` 객체랑 **어떻게** 비교할지
 `public int compareTo(T o)` 함수를 구현해주면 되는것이다.
+
+다음은 `Comparable` 를 사용한 예제이다. 참고로 예제는 [백준 문제 10825](https://www.acmicpc.net/problem/10825) 의 정답의 일부분을
+가져왔다.
 
 ```java
 class Student implements Comparable<Student> {
@@ -56,11 +61,8 @@ class Student implements Comparable<Student> {
 
 }
 ```
-위의 `Student` 클래스를 보면 비교를 위해 `Comparable<Student>` 를 상속받아
-`compareTo(Student o)` 를 구현하였다. 참고로 예제는
-[백준 문제 10825](https://www.acmicpc.net/problem/10825) 의 정답을
-가져왔다.
-
+`Student` 클래스를 보면 비교를 위해 `Comparable<Student>` 를 상속받아
+`compareTo(Student o)` 를 구현하였다. 
 
 ```java
 Student student1 = new Student("a", 50, 60, 70);
@@ -103,6 +105,7 @@ public interface Comparator<T> {
 매개변수가 2개 이다. `Comparable` 은 자기자신과 비교를 했지만, `Comparator`
 의 경우 두 개의 객체를 넘겨주기에, 넘겨주는 두 개의 객체 서로가 비교대상이다.
 
+다음은 `Comparable` 구현했던 예제를 `Comparator` 로 바꾼 예제이다.
 ```java
 class Student implements Comparator<Student> {
     String name;
@@ -135,21 +138,24 @@ class Student implements Comparator<Student> {
     }
 }
 ```
-`Student` 클래스에서 `Comparator` 로 변경했다. `int compare(T o1, T o2)`
+
+`Comparator` 의 `int compare(T o1, T o2)`
 메소드는 본인을 기준으로 비교하는게 아닌 매개변수로 받은 두 객체끼리 비교를 해준다.
+
 ```java
 Student student1 = new Student("a", 50, 60, 70);
 Student student2 = new Student("b", 60, 60, 70);
 Student student3 = new Student("c", 70, 60, 70);
 int num = student3.compare(student1, student2); // 10 을 반환한다.
 ```
+
 그래서 `student3.compare(student1, student2)` 에서는 `student1` 과
 `student2` 를 비교해서 점수차이인 10 을 반환한다. 
 `student3` 은 그냥 `Student` 클래스에 있는 `compareTo` 함수를 호출하기위해
 사용했을뿐, 실제로 비교에는 아무런 영향을 끼치지 않는다.
 
 근데 이러면 `student3` 는 사용할 필요도없는데 사용하지 않는가? 다른 사람이
-보면 헷갈리게 할 수 있는 코드가 된다(쓰레기같은 코드다). 그래서 익명객체를 이용해서 구현해주자.
+보면 헷갈리게 할 수 있는 코드가 된다(쓰레기같은 코드다). 그래서 익명객체를 이용해서 구현해주는 방법이 있다.
 
 ```java
 class Test {
@@ -195,7 +201,7 @@ class Test {
 
 `Comparable` 과 다르게 `Student` 클래스에 구현하지 않아도 된다!
 라는건 생각해보면 많은 이점이 있다. `Comparable` 은 `Student` 에 
-단 하나의 기준만 세울 수 있지만, `Comparator` 를 활용하면 여러개의
+**단 하나**의 기준만 세울 수 있지만, `Comparator` 를 활용하면 여러개의
 익명객체를 만듬으로써 여러가지 기준에서 필요한것을 골라서 사용할 수 있다. 
 
 ```java
@@ -240,7 +246,10 @@ students.add(new Student("c", 70, 60, 70));
 Collections.sort(students);
 
 // Comparator 익명객체 사용시
+// 방법1
 Collections.sort(students, comparator);
+
+// 방법2
 students.sort(comparatro);
 ```
 
@@ -328,5 +337,5 @@ class Student implements Comparable<Student> {
 }
 ```
 
-참고  
-https://st-lab.tistory.com/243
+### Reference
+[https://st-lab.tistory.com/243](https://st-lab.tistory.com/243)
