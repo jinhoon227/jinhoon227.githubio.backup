@@ -12,13 +12,13 @@ tags : java cs 자바 string constant pool
 - 리터럴`""` 를 이용해 만드는 방식
 
 ```java
-String newString1 = new String("Cat");
-String newString2 = new String("Cat");
-System.out.println(newString1 == newString2); // false
-
 String literalString1 = "Cat";
 String literalString2 = "Cat";
 System.out.println(literalString1 == literalString2); // true
+
+String newString1 = new String("Cat");
+String newString2 = new String("Cat");
+System.out.println(newString1 == newString2); // false
 ```
 
 두 가지 방식으로 만든 `String` 은 서로 다른 차이를 보임을 알 수 있다.
@@ -28,7 +28,7 @@ System.out.println(literalString1 == literalString2); // true
 
 <img src="../../assets/img/posts/cs/stringpool1.png">
 
-먼저 `String` 객체를 만들면 stack Memory 에 차곡차곡 쌓인다.(`newString1`, `newString2`, `literalString1`, `literalString1`)
+먼저 `String` 객체를 만들면 stack Memory 에 차곡차곡 쌓인다.(`literalString1`, `literalString2`, `newString1`, `newString2`)
 그리고 stack Memory 에서 각 객체가 Heap Memory 를 가리키는데 `new` 연산과 리터럴은 여기서
 차이를 보인다.
 
