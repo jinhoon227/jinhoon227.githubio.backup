@@ -69,6 +69,7 @@ System.out.println(newString1 == literalString1); // true
 어차피 대부분이 리터럴로 `String` 을 초기화하고 있을텐데 계속 그렇게 사용하면 된다. 특수한 경우가 아니라면 `new` 로 초기화할 일은 없다.
 
 ## Reference
+
 [https://starkying.tistory.com/entry/what-is-java-string-pool](https://starkying.tistory.com/entry/what-is-java-string-pool)  
 [https://doohong.github.io/2018/03/04/java-string-pool/](https://doohong.github.io/2018/03/04/java-string-pool/)  
 [https://velog.io/@jeb1225/JAVA-String-Pool](https://velog.io/@jeb1225/JAVA-String-Pool)  

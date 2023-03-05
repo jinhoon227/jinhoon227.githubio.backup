@@ -15,6 +15,7 @@ tags : java comparable comparator sort 정렬 비교 백준
 
 
 ## Comparable
+
 ```java
 public interface Comparable<T> {
     public int compareTo(T o);
@@ -82,6 +83,7 @@ if (this.korean != o.korean) {
 `this.korean` 이 본인이다.
 
 ### 주의사항
+
 위의 예제처럼 단순히 본인과 비교대상의 차의 값을 리턴하면 코드로 간결하게
 표현이 가능하지만, 리턴값이 `int` 자료형이기 때문에 이를 유의해야한다.
 만약 본인 국어점수가 2,100,000,000 점, 비교 대상 점수가 -2,100,000,000점
@@ -91,6 +93,7 @@ int 자료형을 초과해 오버플로우가 나면 음수로 값을 반환할 
 그러니 자료형과 값의범위를 꼭 확인하자!
 
 ## Comparator
+
 ```java
 @FunctionalInterface
 public interface Comparator<T> {
@@ -338,4 +341,5 @@ class Student implements Comparable<Student> {
 ```
 
 ## Reference
+
 [https://st-lab.tistory.com/243](https://st-lab.tistory.com/243)
