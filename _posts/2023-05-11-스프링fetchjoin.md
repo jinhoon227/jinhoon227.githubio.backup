@@ -242,13 +242,13 @@ User 에 대해 DB 에서 조회를 해도 영속화된 엔티티가 우선으�
 <img src="../../assets/img/posts/spring/develop/fetchjoin2.png">
 
 ```java
-public class UserRepository {
+public class UserQuestionRepository {
     
-    public User findByParentType(String id, ParentType parentType) {
+    public List<UserQuestion> findByParentType(String id, ParentType parentType) {
 
         return result = em.createQuery("select uq from UserQuestion uq" +
-                        " left join fetch uq.user u", User.class)
-                .getSingleResult();
+                        " left join fetch uq.user u", UserQuestion.class)
+                .getListResult();
     }
 }
 ```
