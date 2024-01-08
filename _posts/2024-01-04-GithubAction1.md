@@ -375,7 +375,7 @@ google-key: googlesecretkey
 ```
 
 이 처럼 앞에 어떤 키인지 알려줘야하는데 키값만 떡하니 있으니 못찾은것이다. 그래서 `echo "google-key: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME`
-를 사용해서 만들어주었다.
+를 사용해서 만들어주었다. 전자의 방법으로 할려면 Repository secrets 에 GOOGLE_API_KEY 를 `google-key: googlesecretkey` 처럼 키와 밸류를 같이 적어주어야한다.
 
 ### 참고로
 여기서 살짝 벗어난 주제지만 action-test.yml 파일은 test 만 수행하는 workflow 다. 그런데 환경변수가 불러오는 코드에서 `OCCUPY_SECRET_DIR: ./src/main/resources  # 레포지토리 내 빈 env.yml의 위치 (main)` 로 main 에다가 env.yml 을 만든다. test 면 ./src/test/resources 에서 만들어야 되는게 아니냐라는 의문이 들 수 있다.
