@@ -221,9 +221,164 @@ logging:
           report_paths: build/test-results/test/TEST-*.xml
 ```
 
-해당 코드도 옵션이다. 위의 옵션을 사용하면 테스트 실패시 어떤 라인이 잘못됐는지 알려준다.
+해당 코드도 옵션이다. 위의 옵션을 사용하면 테스트 실패시 아래 사진처럼 어떤 라인이 잘못됐는지 알려준다.
 
-## 마무리
+<img src="../../assets/img/posts/ci/ga8.png">
+
+## 환경 변수 추가 설정
+
+다시 한번 `contextLoads() FAILED` 에러가 발생했다!
+
+<img src="../../assets/img/posts/ci/ga9.png">
+
+발생 이유는 다음과 같았다. 해당 어플리케이션에서는 외부 API 를 요청한다. 그리고 외부 API 를 요청할때 KEY 를 발급해서 해당 키를 주면 요청에 응답해준다. 문제는 이 KEY 를 아무생각 없이 github 에 올리면 다른 사람도 사용할 수 있다. 유료 API 라면 다른 사람이 무분별한 사용으로 요금폭탄을 맞을 수 도 있는것이다. 그래서 이런 중요한 키 정보들은 파일을 따로 관리하여 github 에 올리지 않는다. 여기서 문제가 생긴다.. github action 에서 해당 키 값이 없으니 이를 테스트하면 외부 API 를 요청할 수 없어 테스트 통과가 안된다는점이다.
+
+열심히 구글링 해본결과 아래 방식을 사용한다.
+1. env.yml 파일로 환경변수를 저장한다. 그리고 application.yml 에서 해당 env.yml 파일을 포함하도록 한다. 로컬에서는 env.yml 을 사용해서 빌드와 테스트를 문제없이 할 수 있다.(env.yml 은 .gitignore 에 등록하여 꼭 github 에 올라가지 않도록하게 하자.)
+application.yml 이 env.yml 파일을 포함하는 방법은 아래와 같다. main 말고도 test 에 있는 applciation.yml 에도 설정해주자.
+```yaml
+# 이 파일은 develop level properties
+spring:
+  config:
+    import: env.yml
+...
+```
+
+env.yml 예시로는 아래와 같다. google 비밀키를 예시로 사용한다.
+```yaml
+google-key: googlesecretkey
+```
+
+2. github action 에서는 참고할 env.yml 이 없다. 그래서 workflow 진행과정에서 env.yml 을 만들것이다. 그렇기에 github action 에서 사용할 변수는 repository secrets 에 등록해야 된다.
+repository secrets 등록방법은 github > settings > 좌측메뉴에서 Secrets and variables > Actions 들어가면 repository secrets 가 있고 환경변수명을 정해주고 비밀키를 넣어주면된다. 아래사진처럼 GOOGLE_API_KEY 로 환경변수를 설정해주었다.
+
+<img src="../../assets/img/posts/ci/ga10.png">
+
+repository secrets 키는 다른사람이 볼 수 없다. 그래서 여기에 키 값을 등록하고 github action 에서 사용한다. github action 에서는 위의 repository secrets 에 등록해둔 키 값으로 env.yml 을 만드는 것이다. 그러면 github action 에서도 문제없이 테스트와 빌드를 할 수 있다.
+
+3. action-test 파일을 아래와 같이 수정한다.
+```yaml
+name: action-test
+
+# 하기 내용에 해당하는 이벤트 발생 시 github action 동작
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - release*
+
+  pull_request:
+    branches:
+      - main
+      - develop
+      - release*
+
+
+# 참고사항
+# push가 일어난 브랜치에 PR이 존재하면, push에 대한 이벤트와 PR에 대한 이벤트 모두 발생합니다.
+
+# 단위 테스트 결과를 발행하기 위해 쓰기 권한을 주어야 합니다.
+permissions: write-all
+
+jobs:
+  test: # 테스트를 수행합니다.
+    runs-on: ubuntu-latest # 실행 환경 지정
+    steps:
+      - name: Checkout Repostiory
+        uses: actions/checkout@v3 # github action 버전 지정(major version)
+
+      - name: Set up JDK 17 # JAVA 버전 지정
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto' # OpenJDK 배포사 corretto, temurin
+
+      - name: Copy secrets to application
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          OCCUPY_SECRET_DIR: ./src/main/resources  # 레포지토리 내 빈 env.yml의 위치 (main)
+          OCCUPY_SECRET_DIR_FILE_NAME: env.yml                 # 파일 이름
+
+        # secrets 값 복사
+        run: |
+          echo "GOOGLE_API_KEY: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME
+
+      # github action 에서 Gradle dependency 캐시 사용
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with: # 캐시로 사용될 경로 설정
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }} # 캐시 키 설정
+          restore-keys: |
+            ${{ runner.os }}-gradle- # 복원 키 설정
+
+      - name: Grant execute permission for gradlew # 실행할 수 있게 권한주기
+        run: chmod +x gradlew
+
+      - name: Test with Gradle
+        run: ./gradlew test
+      
+      # 테스트 후 Result를 보기위해 Publish Unit Test Results step 추가
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: ${{ always() }}  # 테스트가 실패하여도 Report를 보기 위해 `always`로 설정
+        with:
+          files: build/test-results/test/TEST-*.xml
+
+      # 테스트 실패시 어디서 틀렸는지 알려줍니다.
+      - name: Add comments to a pull request
+        uses: mikepenz/action-junit-report@v3
+        if: ${{ always() }}
+        with:
+          report_paths: build/test-results/test/TEST-*.xml
+
+```
+
+위는 전체코드이고 추가된 코드는 아래와 같다.
+
+```yaml
+- name: Copy secrets to application
+  env:
+    GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} # 구글키를 repository secrets 에서 가져옴
+    OCCUPY_SECRET_DIR: ./src/main/resources  # 레포지토리 내 빈 env.yml의 위치 (main)
+    OCCUPY_SECRET_DIR_FILE_NAME: env.yml                 # 파일 이름
+
+  # secrets 값 복사
+  run: |
+    echo "google-key: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME
+```
+
+Repository secrets 에 등록한 키는 ${{ secrets.XXX }} 를 통해 접근할 수 있다. 등록해둔 GOOGLE_API_KEY 를 쓸려면 ${{ secrets.GOOGLE_API_KEY }} 이렇게 적으면 되는것이다.
+
+이 구글키를 이용해 env.yml 을 만들어서 넣어준다. 해당과정에 삽질을 엄청 했는데... 처음에 `echo $GOOGLE_API_KEY >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME` 이렇게 했었다.
+이렇게했더니 키값을 못찾는 문제가 발생했다. 10시간 동안 삽질한 결과, 키이름을 안적어준게 문제였다. 저렇게 하면 env.yml 파일이 아래처럼 만들어진다.
+
+```yaml
+googlesecretkey
+```
+
+눈이 좋은분이라면 눈치챘을것이다. googlesecretkey 가 누구의 비밀키인지 정의가 안되어있다. 원래라면
+아래와같이 만들어져야한다.
+
+```yaml
+google-key: googlesecretkey
+```
+
+이 처럼 앞에 어떤 키인지 알려줘야하는데 키값만 떡하니 있으니 못찾은것이다. 그래서 `₩echo "google-key: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME`
+를 사용해서 만들어주었다.
+
+### 참고로
+여기서 살짝 벗어난 주제지만 action-test.yml 파일은 test 만 수행하는 workflow 다. 그런데 환경변수가 불러오는 코드에서 `OCCUPY_SECRET_DIR: ./src/main/resources  # 레포지토리 내 빈 env.yml의 위치 (main)` 로 main 에다가 env.yml 을 만든다. test 면 ./src/test/resources 에서 만들어야 되는게 아니냐라는 의문이 들 수 있다.
+
+springboot 를 좀 사용했던분들이라면 답을 알겠지만, 모르는분들이나 까먹었던분들도 있으실까봐 적어둔다.
+springboot 에서 test 를 할때, resources 에 있는 파일의 경우 test 폴더에 없으면 main 에 있는파일을 먼저 참고한다. 이게 무슨 뜻이냐면 테스트할때 test/resources/application.yml 이 없다면 main/resoures/application.yml 을 참고한다는 뜻이다. (물론 test 에 있다면 이를 우선으로 적용한다.)
+
+즉, 여기서 main 에 env.yml 을 만드는 이유는, "내" 프로젝트 에서는 로컬에서도 test 에 env.yml 을 생성하지 않았기때문이다. 왜? 냐면 test 에도 env.yml 만들면 관리할 파일이 늘어나기에 귀찮아지기 때문이다. 물론 필요성이 생긴다면 분리하겠지만 지금까지는 아니다.(application.yml 은 main, test 둘 다 만든 이유는 test 에서는 h2 database 를 사용하기때문이다. 이렇듯 분리할 필요성이 있으면 분리하면 된다.)
+
+## BLOCKING 설정
 해당 파일을 workflows 폴더 안에 넣었다면 설정해둔 트리거가 작동할때마다 test 검사를 진행할것이다. 근데 test 검사를 수행하고 잘못된게 있다면 강제로 Merge 를 막아야되지 않겠는가? 착한 팀원이라면 당연히 merge 를 안하겠지만, 어쨋든 실수로라도 막아두기위해 github 에서는 강제로 merge 를 막아주는 기능을 제공한다.
 
 Github 사이트에서 설정한다.
