@@ -374,7 +374,7 @@ googlesecretkey
 google-key: googlesecretkey
 ```
 
-이 처럼 앞에 어떤 키인지 알려줘야하는데 키값만 떡하니 있으니 못찾은것이다. 그래서 `₩echo "google-key: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME`
+이 처럼 앞에 어떤 키인지 알려줘야하는데 키값만 떡하니 있으니 못찾은것이다. 그래서 `echo "google-key: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME`
 를 사용해서 만들어주었다.
 
 ### 참고로
