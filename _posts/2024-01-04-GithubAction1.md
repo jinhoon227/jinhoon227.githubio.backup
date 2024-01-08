@@ -234,8 +234,12 @@ logging:
 발생 이유는 다음과 같았다. 해당 어플리케이션에서는 외부 API 를 요청한다. 그리고 외부 API 를 요청할때 KEY 를 발급해서 해당 키를 주면 요청에 응답해준다. 문제는 이 KEY 를 아무생각 없이 github 에 올리면 다른 사람도 사용할 수 있다. 유료 API 라면 다른 사람이 무분별한 사용으로 요금폭탄을 맞을 수 도 있는것이다. 그래서 이런 중요한 키 정보들은 파일을 따로 관리하여 github 에 올리지 않는다. 여기서 문제가 생긴다.. github action 에서 해당 키 값이 없으니 이를 테스트하면 외부 API 를 요청할 수 없어 테스트 통과가 안된다는점이다.
 
 열심히 구글링 해본결과 아래 방식을 사용한다.
-1. env.yml 파일로 환경변수를 저장한다. 그리고 application.yml 에서 해당 env.yml 파일을 포함하도록 한다. 로컬에서는 env.yml 을 사용해서 빌드와 테스트를 문제없이 할 수 있다.(env.yml 은 .gitignore 에 등록하여 꼭 github 에 올라가지 않도록하게 하자.)
+
+### env.yml 파일 설정
+
+env.yml 파일로 환경변수를 저장한다. 그리고 application.yml 에서 해당 env.yml 파일을 포함하도록 한다. 로컬에서는 env.yml 을 사용해서 빌드와 테스트를 문제없이 할 수 있다.(env.yml 은 .gitignore 에 등록하여 꼭 github 에 올라가지 않도록하게 하자.)
 application.yml 이 env.yml 파일을 포함하는 방법은 아래와 같다. main 말고도 test 에 있는 applciation.yml 에도 설정해주자.
+
 ```yaml
 # 이 파일은 develop level properties
 spring:
@@ -245,18 +249,24 @@ spring:
 ```
 
 env.yml 예시로는 아래와 같다. google 비밀키를 예시로 사용한다.
+
 ```yaml
 google-key: googlesecretkey
 ```
 
-2. github action 에서는 참고할 env.yml 이 없다. 그래서 workflow 진행과정에서 env.yml 을 만들것이다. 그렇기에 github action 에서 사용할 변수는 repository secrets 에 등록해야 된다.
+### repository secrets 등록
+
+github action 에서는 참고할 env.yml 이 없다. 그래서 workflow 진행과정에서 env.yml 을 만들것이다. 그렇기에 github action 에서 사용할 변수는 repository secrets 에 등록해야 된다.
 repository secrets 등록방법은 github > settings > 좌측메뉴에서 Secrets and variables > Actions 들어가면 repository secrets 가 있고 환경변수명을 정해주고 비밀키를 넣어주면된다. 아래사진처럼 GOOGLE_API_KEY 로 환경변수를 설정해주었다.
 
 <img src="../../assets/img/posts/ci/ga10.png">
 
 repository secrets 키는 다른사람이 볼 수 없다. 그래서 여기에 키 값을 등록하고 github action 에서 사용한다. github action 에서는 위의 repository secrets 에 등록해둔 키 값으로 env.yml 을 만드는 것이다. 그러면 github action 에서도 문제없이 테스트와 빌드를 할 수 있다.
 
-3. action-test 파일을 아래와 같이 수정한다.
+### workflow 파일 수정
+
+action-test 파일을 아래와 같이 수정한다.
+
 ```yaml
 name: action-test
 
@@ -291,7 +301,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto' 
-          
+
       - name: Copy secrets to application
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} # 구글키를 repository secrets 에서 가져옴
