@@ -266,13 +266,11 @@ on:
     branches:
       - main
       - develop
-      - release*
 
   pull_request:
     branches:
       - main
       - develop
-      - release*
 
 
 # 참고사항
@@ -287,23 +285,23 @@ jobs:
     steps:
       - name: Checkout Repostiory
         uses: actions/checkout@v3 # github action 버전 지정(major version)
-
+      
       - name: Set up JDK 17 # JAVA 버전 지정
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-          distribution: 'corretto' # OpenJDK 배포사 corretto, temurin
-
+          distribution: 'corretto' 
+          
       - name: Copy secrets to application
         env:
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} # 구글키를 repository secrets 에서 가져옴
           OCCUPY_SECRET_DIR: ./src/main/resources  # 레포지토리 내 빈 env.yml의 위치 (main)
           OCCUPY_SECRET_DIR_FILE_NAME: env.yml                 # 파일 이름
 
         # secrets 값 복사
         run: |
-          echo "GOOGLE_API_KEY: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME
-
+          echo "google-key: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME
+      
       # github action 에서 Gradle dependency 캐시 사용
       - name: Cache Gradle packages
         uses: actions/cache@v3
@@ -334,7 +332,6 @@ jobs:
         if: ${{ always() }}
         with:
           report_paths: build/test-results/test/TEST-*.xml
-
 ```
 
 위는 전체코드이고 추가된 코드는 아래와 같다.
