@@ -252,7 +252,7 @@ H2 는 매우 가벼운 DB 라 속도가 빠르다는 장점이 있지만, 그�
 ## 단위테스트 시각화2
 
 ```yaml
-- name: Add comments to a pull request
+      - name: Add comments to a pull request
         uses: mikepenz/action-junit-report@v3
         if: ${{ always() }}
         with:
