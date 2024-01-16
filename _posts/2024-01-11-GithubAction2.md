@@ -244,6 +244,7 @@ DockerHub 에 도커이미지를 푸시해주는 과정이다. 기존에는 아�
 처음에 이미지 이름을 jinhoon227/backend/dev:latest 이런식으로 작성했었는데 에러가 났다. 이름을 제대로 지으라고 말이다. [사용자명]/[레포명]:버전 이런식으로 네이밍을 해줘야한다. 그리고 반드시 사용자명은 일치해야한다. 도커허브 계정이 jinhoon227 인데 jin/backend:latest 로 하면 jinhoon227 과 jin 은 다르기때문에 푸시할 수 없다.
 
 ## Deploy to server
+
 ```yaml
 # appleboy/ssh-action@master 액션을 사용하여 지정한 서버에 ssh로 접속하고, script를 실행합니다.
       # 실행 시, docker-compose를 사용합니다.

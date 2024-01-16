@@ -6,15 +6,18 @@ tags : java spring jpa cicd
 ---
 
 ## CI - Github Action
+
 Github 에 push, pull request 가 발생하면 자동으로 Test 를 수행하면 좋겠다고 생각했다. CI 를 할 수 있게 도와주는 프로그램으로 Jenkins, Travis CI, Github Action 등등 여러가지가 있다. Jenkins 는 많은 기업에서 사용하면서 인증받은 CICD 툴이다. 파이프라인을 한곳에서 관리할 수 있어 대규모 시스템에 적합하다. 하지만 설정하는 과정이 다소 복잡해서 처음 접하는 사람에게 어려울 수 있다. Travis CI 는 사용하기 편하지만 일정기간 이상 사용하면 유료로 전환된다. Github Action 은 사용하기 편하고, Github 관련해서 시각화가 잘되어있다. 아무래도 Github Action 이다보니 Github 와 연동되는게 많을것이다. 무료이고, 사용이 편한것을 찾다보니 Github Action 을 사용하게 되었다. (Github Action 적용 레포가 private 면 제한이 있다. public 이면 항상 무료다!)
 
 ## CI - Test
+
 Github Action 에서 테스트를 적용할려면 `.github` 폴더 안에 `workflows` 폴더를 만들어줘야 한다. 해당 폴더를 만들고 안에 `yml` 파일을 넣어두면 조건에 따라서 알아서 실행해준다. 테스트 CI 를 해줄 `action-test.yml` 파일을 `.github/workflows/action-test.yml` 에 넣어주었다.
 
 <img src="../../assets/img/posts/ci/ga1.png">
 
 
 ### 파일 코드
+
 ```yaml
 name: action-test
 
@@ -101,6 +104,7 @@ on:
 on 은 어떤 조건에서 해당 파일이 작동할지 적어주는 것이다. 나는 push, pull request 가 발생했을시에 작동하도록 했다. 그리고 main, develop 브랜치 대상으로만 설정했다. 만약 feature/first-feature-branch, feature/second-feature-branch 같이 feature 하위 폴더 브랜치에도 동작하게 하고싶다면 feature/** 를 적어주면 된다.
 
 ## JDK 17
+
 ```yaml
       - name: Set up JDK 17 # JAVA 버전 지정
         uses: actions/setup-java@v3
@@ -112,6 +116,7 @@ on 은 어떤 조건에서 해당 파일이 작동할지 적어주는 것이다.
 자바의 어떤 버전으로 진행하는지 적어주어야 한다. 본인이 사용하는 JDK 버전을 잘 확인하고 사용하자. 보통 Spring Boot 3.0 버전 이상을 쓰면 JDK 17 을 사용한다.
 
 ## 캐시 적용
+
 ```yaml
       - name: Cache Gradle packages
         uses: actions/cache@v3
@@ -127,6 +132,7 @@ on 은 어떤 조건에서 해당 파일이 작동할지 적어주는 것이다.
 해당 과정은 필수 과정은 아니다. path 에 적힌 `~/.gradle/caches`, `~/.gradle/wrapper` 를 (의존성파일) 을 캐싱해두어 다음에 실행할때 캐싱된 파일을 이용해 빌드 시간을 좀 더 줄일 수 있다. 30% 가량 빌드시간을 줄 일 수 있는것으로 보인다. 
 
 ## 권한 설정
+
 ```yaml
       - name: Grant execute permission for gradlew # 실행할 수 있게 권한주기
         run: chmod +x gradlew
@@ -135,6 +141,7 @@ on 은 어떤 조건에서 해당 파일이 작동할지 적어주는 것이다.
 해당 파일은 우분투 리눅스 최신버전으로 실행된다, 리눅스 환경에서 Java 빌드명령어(gradlew)를 실행시켜줄 권한을 주어야한다. 
 
 ## 테스트 실행
+
 ```yaml
       - name: Test with Gradle
         run: ./gradlew test
@@ -166,6 +173,7 @@ dependencies {
 ```
 
 test 폴더 안에 resource 폴더를 만들고 안에 application.yml 를 넣어서 test 용 설정을 추가한다.
+
 ```yaml
 # 테스트용 설정 - 인메모리 db 사용
 spring:
@@ -207,7 +215,18 @@ H2 는 매우 가벼운 DB 라 속도가 빠르다는 장점이 있지만, 그�
 
 해당 코드를 추가하면 Github Action 에서 MySql 이미지를 가져와 띄운다. 그래서 h2 를 사용할때보다 시간이 좀 걸린다(10초 정도 더?) 
 
+### gradlew test --full-stacktrace
+
+```yaml
+      - name: Test with Gradle
+        run: ./gradlew test --full-stacktrace
+```
+
+테스트를 돌리다보니 틀렸다고는 나오는데 자세하게 안알려줘서 정확히 오류를 찾기어려웠다. 그래서 추적하기위해서 `--full-stacktrace` 를 붙여주면 어디서 잘못됬는지 알려준다. 더 딮하게 알고 싶으면 `./gradlew test -i` 를 사용해보자. 정말 모든 로그를 출력한다. 그래서 더 찾기 어려울워서 적당히 알고싶으면 위에껄 사용하자.
+
+
 ## 단위테스트 시각화
+
 ```yaml
   # 테스트 후 Result를 보기위해 Publish Unit Test Results step 추가
       - name: Publish Unit Test Results
@@ -231,6 +250,7 @@ H2 는 매우 가벼운 DB 라 속도가 빠르다는 장점이 있지만, 그�
 > `permissions: write-all`
 
 ## 단위테스트 시각화2
+
 ```yaml
 - name: Add comments to a pull request
         uses: mikepenz/action-junit-report@v3
@@ -396,6 +416,7 @@ google-key: googlesecretkey
 를 사용해서 만들어주었다. 전자의 방법으로 할려면 Repository secrets 에 GOOGLE_API_KEY 를 `google-key: googlesecretkey` 처럼 키와 밸류를 같이 적어주어야한다.
 
 ### 참고로
+
 여기서 살짝 벗어난 주제지만 action-test.yml 파일은 test 만 수행하는 workflow 다. 그런데 환경변수가 불러오는 코드에서 `OCCUPY_SECRET_DIR: ./src/main/resources  # 레포지토리 내 빈 env.yml의 위치 (main)` 로 main 에다가 env.yml 을 만든다. test 면 ./src/test/resources 에서 만들어야 되는게 아니냐라는 의문이 들 수 있다.
 
 springboot 를 좀 사용했던분들이라면 답을 알겠지만, 모르는분들이나 까먹었던분들도 있으실까봐 적어둔다.
@@ -403,7 +424,101 @@ springboot 에서 test 를 할때, resources 에 있는 파일의 경우 test �
 
 즉, 여기서 main 에 env.yml 을 만드는 이유는, "내" 프로젝트 에서는 로컬에서도 test 에 env.yml 을 생성하지 않았기때문이다. 왜? 냐면 test 에도 env.yml 만들면 관리할 파일이 늘어나기에 귀찮아지기 때문이다. 물론 필요성이 생긴다면 분리하겠지만 지금까지는 아니다.(application.yml 은 main, test 둘 다 만든 이유는 test 에서는 h2 database 를 사용하기때문이다. 이렇듯 분리할 필요성이 있으면 분리하면 된다.)
 
+### 내 최종파일
+
+계속 진행하면서 코드가 바뀌다보니 코드가 변경이 많았다. 그래서 현재 최종 코드 파일을 적어본다.
+세부사항으로 달라진건 다음과같다.
+
+1. H2 가 아닌 MySql 사용
+2. `./gradlew test --full-stacktrace` 로 오류발생시 추적가능
+3. 서브모듈을 사용한 설정값 관리
+
+3번의 서브모듈을 사용하는것은 처음보는 글일것이다. 해당글은 [서브모듈이란?](../GithubAction2) 글을 참고하면 좋다. 서브모듈을 사용하면 좀 더 설정값을 편하게 관리할 수 있다.  
+
+```yaml
+name: action-test
+
+# 하기 내용에 해당하는 이벤트 발생 시 github action 동작
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+
+# 참고사항
+# push가 일어난 브랜치에 PR이 존재하면, push에 대한 이벤트와 PR에 대한 이벤트 모두 발생합니다.
+
+# 단위 테스트 결과를 발행하기 위해 쓰기 권한을 주어야 합니다.
+permissions: write-all
+
+jobs:
+  test: # 테스트를 수행합니다.
+    runs-on: ubuntu-latest # 실행 환경 지정
+    steps:
+      - name: Checkout Repostiory
+        uses: actions/checkout@v3 # github action 버전 지정(major version)
+        # 아래는 서브모듈 사용으로 추가
+        with: 
+          token: ${{secrets.ACTION_TOKEN}} 
+          submodules: true
+
+      - name: Set up JDK 17 # JAVA 버전 지정
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto' # OpenJDK 배포사 corretto, temurin
+
+      - name: Set up MySQL
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          host port: 3306
+          container port: 3306
+          mysql database: 'nainga_test'
+          mysql user: 'test'
+          mysql password: ${{ secrets.DB_PASSWORD }}
+
+      # github action 에서 Gradle dependency 캐시 사용
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with: # 캐시로 사용될 경로 설정
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }} # 캐시 키 설정
+          restore-keys: |
+            ${{ runner.os }}-gradle- # 복원 키 설정
+
+      - name: Grant execute permission for gradlew # 실행할 수 있게 권한주기
+        run: chmod +x gradlew
+
+      - name: Test with Gradle
+        run: ./gradlew test --full-stacktrace
+
+      # 또한, Github Actions 상에서는 머신의 IP 주소를 특정할 수가 없어서 도로명 주소 API 사용이 불가능하기 때문이 이와 관련된 테스트도 Skip!
+      # 테스트 후 Result를 보기위해 Publish Unit Test Results step 추가
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: ${{ always() }}  # 테스트가 실패하여도 Report를 보기 위해 `always`로 설정
+        with:
+          files: build/test-results/test/TEST-*.xml
+
+      # 테스트 실패시 어디서 틀렸는지 알려줍니다.
+      - name: Add comments to a pull request
+        uses: mikepenz/action-junit-report@v3
+        if: ${{ always() }}
+        with:
+          report_paths: build/test-results/test/TEST-*.xml
+
+```
+
 ## BLOCKING 설정
+
 해당 파일을 workflows 폴더 안에 넣었다면 설정해둔 트리거가 작동할때마다 test 검사를 진행할것이다. 근데 test 검사를 수행하고 잘못된게 있다면 강제로 Merge 를 막아야되지 않겠는가? 착한 팀원이라면 당연히 merge 를 안하겠지만, 어쨋든 실수로라도 막아두기위해 github 에서는 강제로 merge 를 막아주는 기능을 제공한다.
 
 Github 사이트에서 설정한다.
@@ -420,6 +535,7 @@ Github 사이트에서 설정한다.
 
 
 ## Reference
+
 [https://velog.io/@kimseungki94/Jenkins-vs-Github-Action-%EC%96%B4%EB%96%A4%EA%B1%B8-%EC%93%B0%EB%8A%94%EA%B2%8C-%EC%A2%8B%EC%9D%84%EA%B9%8C](https://velog.io/@kimseungki94/Jenkins-vs-Github-Action-%EC%96%B4%EB%96%A4%EA%B1%B8-%EC%93%B0%EB%8A%94%EA%B2%8C-%EC%A2%8B%EC%9D%84%EA%B9%8C)  
 [https://kotlinworld.com/399](https://kotlinworld.com/399)  
 [https://velog.io/@ohzzi/%EC%9A%B0%EC%95%84%ED%95%9C%ED%85%8C%ED%81%AC%EC%BD%94%EC%8A%A4-4%EA%B8%B0-220802-F12-%EA%B0%9C%EB%B0%9C%EC%9D%BC%EC%A7%80](https://velog.io/@ohzzi/%EC%9A%B0%EC%95%84%ED%95%9C%ED%85%8C%ED%81%AC%EC%BD%94%EC%8A%A4-4%EA%B8%B0-220802-F12-%EA%B0%9C%EB%B0%9C%EC%9D%BC%EC%A7%80)  
