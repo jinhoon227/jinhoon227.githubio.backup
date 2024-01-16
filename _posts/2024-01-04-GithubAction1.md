@@ -387,7 +387,7 @@ jobs:
 ```yaml
 - name: Copy secrets to application
   env:
-    GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} # 구글키를 repository secrets 에서 가져옴
+    GOOGLE_API_KEY: $\{\{ secrets.GOOGLE_API_KEY \}\} # 구글키를 repository secrets 에서 가져옴
     OCCUPY_SECRET_DIR: ./src/main/resources  # 레포지토리 내 빈 env.yml의 위치 (main)
     OCCUPY_SECRET_DIR_FILE_NAME: env.yml                 # 파일 이름
 
@@ -396,7 +396,7 @@ jobs:
     echo "google-key: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME
 ```
 
-Repository secrets 에 등록한 키는 ${{ secrets.XXX }} 를 통해 접근할 수 있다. 등록해둔 GOOGLE_API_KEY 를 쓸려면 ${{ secrets.GOOGLE_API_KEY }} 이렇게 적으면 되는것이다.
+Repository secrets 에 등록한 키는 `$\{\{ secrets.XXX \}\}` 를 통해 접근할 수 있다. 등록해둔 GOOGLE_API_KEY 를 쓸려면 `$\{\{ secrets.GOOGLE_API_KEY \}\}` 이렇게 적으면 되는것이다.
 
 이 구글키를 이용해 env.yml 을 만들어서 넣어준다. 해당과정에 삽질을 엄청 했는데... 처음에 `echo $GOOGLE_API_KEY >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME` 이렇게 했었다.
 이렇게했더니 키값을 못찾는 문제가 발생했다. 10시간 동안 삽질한 결과, 키이름을 안적어준게 문제였다. 저렇게 하면 env.yml 파일이 아래처럼 만들어진다.
