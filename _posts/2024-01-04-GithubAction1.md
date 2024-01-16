@@ -189,6 +189,24 @@ logging:
 
 테스트 할때는 h2 DB 인 인메모리 DB 를 사용하기 때문에 파일에 추가적으로 DB 설정을 할 필요가 없다. 이렇게함으로써 `contextLoads() FAILED` 에러를 해결할 수 있었다.
 
+### MySql 로 테스트 하고 싶다면
+
+H2 는 매우 가벼운 DB 라 속도가 빠르다는 장점이 있지만, 그만큼 제공하는 기능이 적기때문에 MySQL 에서 사용하던것을 적용하지 못할 수 있다. 그래서 실제환경과 동일하게 MySQL 을 구축하고 싶다면 아래코드를 추가하자.
+
+```yaml
+
+      - name: Set up MySQL
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          host port: 3306
+          container port: 3306
+          mysql database: 'nainga_test'
+          mysql user: 'test'
+          mysql password: ${{ secrets.DB_PASSWORD }}
+```
+
+해당 코드를 추가하면 Github Action 에서 MySql 이미지를 가져와 띄운다. 그래서 h2 를 사용할때보다 시간이 좀 걸린다(10초 정도 더?) 
+
 ## 단위테스트 시각화
 ```yaml
   # 테스트 후 Result를 보기위해 Publish Unit Test Results step 추가
@@ -402,7 +420,7 @@ Github 사이트에서 설정한다.
 
 
 ## Reference
-[https://velog.io/@kimseungki94/Jenkins-vs-Github-Action-%EC%96%B4%EB%96%A4%EA%B1%B8-%EC%93%B0%EB%8A%94%EA%B2%8C-%EC%A2%8B%EC%9D%84%EA%B9%8C](https://velog.io/@kimseungki94/Jenkins-vs-Github-Action-%EC%96%B4%EB%96%A4%EA%B1%B8-%EC%93%B0%EB%8A%94%EA%B2%8C-%EC%A2%8B%EC%9D%84%EA%B9%8C)
-[https://kotlinworld.com/399](https://kotlinworld.com/399)
-[https://velog.io/@ohzzi/%EC%9A%B0%EC%95%84%ED%95%9C%ED%85%8C%ED%81%AC%EC%BD%94%EC%8A%A4-4%EA%B8%B0-220802-F12-%EA%B0%9C%EB%B0%9C%EC%9D%BC%EC%A7%80](https://velog.io/@ohzzi/%EC%9A%B0%EC%95%84%ED%95%9C%ED%85%8C%ED%81%AC%EC%BD%94%EC%8A%A4-4%EA%B8%B0-220802-F12-%EA%B0%9C%EB%B0%9C%EC%9D%BC%EC%A7%80)
-[https://devs0n.tistory.com/25](https://devs0n.tistory.com/25)
+[https://velog.io/@kimseungki94/Jenkins-vs-Github-Action-%EC%96%B4%EB%96%A4%EA%B1%B8-%EC%93%B0%EB%8A%94%EA%B2%8C-%EC%A2%8B%EC%9D%84%EA%B9%8C](https://velog.io/@kimseungki94/Jenkins-vs-Github-Action-%EC%96%B4%EB%96%A4%EA%B1%B8-%EC%93%B0%EB%8A%94%EA%B2%8C-%EC%A2%8B%EC%9D%84%EA%B9%8C)  
+[https://kotlinworld.com/399](https://kotlinworld.com/399)  
+[https://velog.io/@ohzzi/%EC%9A%B0%EC%95%84%ED%95%9C%ED%85%8C%ED%81%AC%EC%BD%94%EC%8A%A4-4%EA%B8%B0-220802-F12-%EA%B0%9C%EB%B0%9C%EC%9D%BC%EC%A7%80](https://velog.io/@ohzzi/%EC%9A%B0%EC%95%84%ED%95%9C%ED%85%8C%ED%81%AC%EC%BD%94%EC%8A%A4-4%EA%B8%B0-220802-F12-%EA%B0%9C%EB%B0%9C%EC%9D%BC%EC%A7%80)  
+[https://devs0n.tistory.com/25](https://devs0n.tistory.com/25)  
