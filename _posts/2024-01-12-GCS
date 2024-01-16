@@ -1,0 +1,175 @@
+---
+layout: post
+title:  "[CICD] Springboot GCS(Google Cloud Storage) 적용기"
+categories: SPRING CICD
+tags : java spring jpa cicd
+---
+
+## GCS
+
+아마존의 S3 라고 보면된다. 이미지를 저장하는데 주로쓰인다. 이미지를 클라우드 저장소에 저장하고 해당 저장소 접근 이미지 url로 클라이언트는 접근을 한다. 이미지를 서버에서 쌩으로 주고받는것보다 링크를 줌으로써 서버의 부하를 매우 줄일 수 있게 된다. 이미지를 EC2 에 저장하기에는 EC2 는 할일이 많기때문에, 단순히 큰 용량만 있으면 되는 S3 를 사용하는것이다. 하지만 S3 프리티어의 경우 요청 제한이 낮아서 GCS(Google Cloud Storage) 를 사용하게되었다.
+
+## GCS 설정
+
+여기서는 GCS 를 설정하면 마주한 트러블슈팅을 주로 소개하고, GCS 를 구성하는법은 간략하게 소개하고 넘어간다. 이미지와 함께 상세한 설명은 맨아래 참고한 링크를 보자.
+
+1. Google Cloud 홈페이지 > 신규회원가입이라면 무료로 300달러를 지급한다.
+2. Google Cloud Storage 로 들어가 새로운 인스턴스를 만든다.
+3. 인스턴스는 E2-small 로 저성능을 선택했다.
+4. 부팅디스크는 Github action 에서도 Ubuntu 를 사용하므로 동일하게 Ubuntu 를 사용했다.(암드가 아닌 인텔환경이다)
+5. 방화벽의 경우 http, https, 로드밸런스 모두 체크해주었다.
+6. 위 사양으로 인스턴스를 만들었다면, 사용자 권한을 추가해 allUser => 저장소 개체 뷰어를 주었다(클라이언트가 이미지를 볼 수 있게)
+7. I AM 및 관리자 > 서비스 계정 으로 들어가 Springboot 에서 접근할 계정을 만들어주었다.(저장소 개체 관리자, 저장소 관리자) 그리고 해당 계정으로 키를 만들고 JSON 키파일을 생성한다.
+
+여기까지 해왔다면 아래와같은 준비물이 필요하다.
+
+버킷이름 : 버킷을 만들었다면 아래이미지와 같이 이름이 있을것이다.
+
+<img src="../../assets/img/posts/ci/gcs1">
+
+JSON 파일 : JSON 으로 키파일을 생성했다면 JSON 파일이 다운되어있다.
+
+## SpringBoot 설정
+
+#### build.gradle
+
+```gradle
+dependencies {
+
+    ...
+
+	// for GCS
+	implementation group: 'org.springframework.cloud', name: 'spring-cloud-gcp-starter', version: '1.2.8.RELEASE'
+	implementation group: 'org.springframework.cloud', name: 'spring-cloud-gcp-storage', version: '1.2.8.RELEASE'
+}
+```
+
+GCS 를 SpringBoot 에서 사용하기위해 `build.gradle`에 설정을 추가해준다.
+
+#### application.yml
+
+```yml
+spring:
+  cloud:
+    gcp:
+      storage:
+        credentials:
+          location: classpath: ${json_file_name}
+        project-id: ${project_id}
+        bucket: ${bucket_name}
+```
+
+`application.yml` 에 들어가 위와 같은 설정을 추가한다. yml 파일은 뛰워쓰기가 중요하다. 복붙했다가 간격이 바뀌는 경우가 있으니 잘 확인하자. `${json_file_name}` 에는 이전에 다운 받았던 json 파일 이름을 써주면된다. 당연히 json 파일은 `application.yml` 과 같은 위치이어야 한다. 만약 다른위치라면 상대경로 위치까지 적어주자. `${project_id}` 는 다운받은 json 파일에 있는 project_id 를 적어주면 된다. `${bucket_name}` 에는 이전에 준비했던 버킷이름을 적어주면 된다.
+
+#### GCS Response
+
+```java
+@Data
+public class GcsResponse {
+    private MultipartFile image;
+}
+
+```
+
+### GCS Controller
+
+```java
+@RestController
+@RequiredArgsConstructor
+public class GcsController {
+
+    private final GcsService gcsService;
+
+    @Tag(name = "GCS") // Swagger 설정
+    @Operation(summary = "GCS 접속", description = "GCS 에 이미지 저장!") // Swagger 설정
+    @PostMapping(value = "api/v1/gcs", 
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE) // Swagger 에서 Multipartfile 받는 방법
+    public Result<String> saveImageToGCS(@ModelAttribute GcsResponse response) {
+        String url = gcsService.uploadImage(response);
+        return new Result<>(Result.CODE_SUCCESS, Result.MESSAGE_OK, url);
+    }
+}
+```
+
+#### GCS Service
+
+```java
+@Service
+@Transactional(readOnly = true)
+@RequiredArgsConstructor
+public class GcsService {
+
+    private final Storage storage;
+
+    public String uploadImage(GcsResponse response) {
+
+        // 이미지 업로드
+        String bucketName = "bucket name";
+        String uuid = UUID.randomUUID().toString(); // Google Cloud Storage에 저장될 파일 이름(중복 이름 안되게 저장하도록 주의)
+        String ext = response.getImage().getContentType(); // 파일의 형식 ex) JPG
+
+        try {
+            BlobInfo blobInfo = BlobInfo.newBuilder(bucketName, uuid)
+                    .setContentType(ext)
+                    .build();
+
+            // Cloud 에 업로드
+            Blob blob = storage.create(blobInfo, response.getImage().getBytes());
+        } catch (IOException e) {
+            throw new IllegalArgumentException("GCS 에러");
+        }
+
+        // 이미지 접근 url : https://storage.googleapis.com/버킷이름/UUID값
+        return "https://storage.googleapis.com/" + bucketName + "/" + uuid;
+    }
+}
+```
+
+해당 코드가 GCS 에 이미지를 올리는 코드이다. 
+기존 블로그에 보면
+
+```
+Blob blob = storage.create(blobInfo, response.getImage().getInputStream());
+```
+
+위 코드를 이용해 클라우드에 업로드하는 경우가 많다. 그런데 Intellij 에서 사용하다보면 storage.create 가 deprecated method 라고 뜬다. 1.1.x 버전 이후 더 이상 사용하지 않는 메소드인데 사용해서 뜨는 경고이다. 그대로 사용해도 문제는없었지만 찜찜하니 최신으로 `Blob blob = storage.create(blobInfo, response.getImage().getBytes());` 바꿔주었다.
+
+위 코드만으로도 오류가 나는 사람이 있다. 나는 이렇게해도 `Storage` 를 못찾는다고 오류가 떴었다. 추측으로는 `Storage` 가 `import com.google.cloud.storage.Storage;` 로 기본값으로 `application.yml` 에서 설정해둔것을 참고해서 `Storage` 에 의존성을 주입해주는것 같다. 그런데 나는 `application.yml` 위치가 조금달라서 못찾는것 같다. 그래서 수동으로 `Storage` 를 주입하는 코드를 작성했다.
+
+#### GCS Config
+
+```java
+@Configuration
+public class GcsConfig {
+
+    @Bean
+    public Storage storage() {
+        String keyFileName = "json_folder/json_name.json";
+        Storage storage;
+        try {
+            InputStream keyFile = ResourceUtils.getURL("classpath:" + keyFileName).openStream();
+            storage = StorageOptions.newBuilder()
+                    .setCredentials(GoogleCredentials.fromStream(keyFile))
+                    .build()
+                    .getService();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("GCS 에러");
+        }
+
+        return storage;
+    }
+}
+```
+
+위 코드르 사용해 `Storage` 를 직접 주입해 주었다. keyFileName 에는 json 파일이 있는 위치를 적어주면 된다. 기본으로 `resources` 폴더부터 시작한다.
+
+## 마무리
+
+GCS 를 사용하는 글이 생각보다 적어서 구글링하기 어려웠다. 공식문서를 뒤지면서 어떻게 사용하는지 감을 잡았던것 같다. 
+
+
+## Reference
+
+[https://padosol.tistory.com/66](https://padosol.tistory.com/66)
+[https://cloud.spring.io/spring-cloud-static/spring-cloud-gcp/current/reference/html/](https://cloud.spring.io/spring-cloud-static/spring-cloud-gcp/current/reference/html/)
+[https://choo.oopy.io/35bffd94-7a41-4cfa-812c-b8aaf148604a](https://choo.oopy.io/35bffd94-7a41-4cfa-812c-b8aaf148604a)
