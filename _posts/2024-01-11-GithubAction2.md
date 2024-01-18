@@ -24,6 +24,7 @@ tags : java spring jpa cicd
 ### action-develop-cd.yml
 
 ```yaml
+{% raw %}
 name: action-develop-cd
 
 # 언제 이 파일의 내용이 실행될 것인지 정의
@@ -122,16 +123,20 @@ jobs:
             cp -f ./src/main/resources/backend-submodule/docker-compose-dev.yml .
             rm -r src
             docker-compose -f docker-compose-dev.yml up -d
+
+{% endraw %}
 ```
 
 ## Checkout Repository
 
 ```yaml
+{% raw %}
 - name: Checkout repository
         uses: actions/checkout@v3
         with:
           token: ${{secrets.ACTION_TOKEN}}
           submodules: true
+{% endraw %}
 ```
 
 Github Action 에서 Repository 를 가져오는 과정이다. 여기서 눈여겨볼점은 `token: ${{secrets.ACTION_TOKEN}}` 과 ` submodules: true` 이다. 해당 과정은 submodule 을 사용하면 적어주어야 한다. submodule 을 사용하지 않는다면 필요없다.
@@ -170,6 +175,7 @@ Intellij 에서 submodule 을 Directory Mapping 설정해주면서 root 에서 �
 ## 환경변수 파일 생성
 
 ```yaml
+{% raw %}
 # Repository secrets 에 등록해둔 환경변수 파일 생성
       - name: Copy secrets to application
         env:
@@ -180,6 +186,7 @@ Intellij 에서 submodule 을 Directory Mapping 설정해주면서 root 에서 �
         # 환경변수 값 복사
         run: |
           echo $OCCUPY_ENV >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME
+{% endraw %}
 ```
 
 서브모듈을 사용해 비밀정보를 관리할 수 도 있지만, ENV 파일 내용을 Repositry Secrets 에 등록해두어서 관리할 수 도 있다. 이전글에서는 이 방식으로 환경변수를 관리했어서 학습차원에서 남겨두었다. 관리해야할 파일이 많아지면 서브모듈로 넘어가는게 좋다.
@@ -187,6 +194,7 @@ Intellij 에서 submodule 을 Directory Mapping 설정해주면서 root 에서 �
 ## Send docker-compose
 
 ```yaml
+{% raw %}
 # 도커 컴포즈 설정 파일 서버(EC2)로 전달
       - name: Send docker-compose.yml
         uses: appleboy/scp-action@master
@@ -196,7 +204,7 @@ Intellij 에서 submodule 을 Directory Mapping 설정해주면서 root 에서 �
           key: ${{ secrets.KCS_KEY_DEV }}
           source: "src/main/resources/backend-submodule/docker-compose-dev.yml"
           target: "/home/ubuntu/"
-
+{% endraw %}
 ```
 
 도커컴포즈 파일을 EC2 서버로 보내는 작업이다. 위와 같이 하면 EC2 서버에 `/home/ubuntu/src/main/resources/backend-submodule/docker-compose-dev.yml` 경로로 파일이 생긴다. EC2 에서는 docker-compose 파일을 실행시켜주어야 하기때문에 EC2 에 보내준다.
@@ -206,6 +214,7 @@ Intellij 에서 submodule 을 Directory Mapping 설정해주면서 root 에서 �
 ## Docker login & push
 
 ```yaml
+{% raw %}
 # Docker hub 로그인
       - name: Login to dockerHub
         uses: docker/login-action@v2
@@ -223,11 +232,13 @@ Intellij 에서 submodule 을 Directory Mapping 설정해주면서 root 에서 �
           tags: ${{ secrets.DOCKER_REPOSITORY }}:latest
           cache-from: type=gha
           cache-to: type=gha, mode=max
+{% endraw %}
 ```
 
 DockerHub 에 도커이미지를 푸시해주는 과정이다. 기존에는 아래 코드를 사용했다.
 
 ```yaml
+{% raw %}
 # dockerfile을 통해 이미지를 빌드하고, 이를 docker repo로 push
       # DOCKER_REPOSITORY : [아이디]/[레포명]
       - name: Docker build & push to docker repo
@@ -235,6 +246,7 @@ DockerHub 에 도커이미지를 푸시해주는 과정이다. 기존에는 아�
           docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
           docker build -t ${{ secrets.DOCKER_REPOSITORY }}:latest -f Dockerfile.dev .
           docker push ${{ secrets.DOCKER_REPOSITORY }}:latest
+{% endraw %}
 ```
 
 하지만 docker buildx 를 캐시를 이용하기위해 사용하면서 `docker/login-action@v2` 과 `docker/build-push-action@4` 를 이용했다. 여기서는 PASSWORD 대신에 TOKEN 이용했는데 TOKEN 은 DockerHub 에서 발급받을 수 있다. DOCKER_REPOSITORY 의 경우 [사용자명]/[레포명] 이다. 예를 들면 jinhoon227/backend 이렇게이다. 
@@ -246,6 +258,7 @@ DockerHub 에 도커이미지를 푸시해주는 과정이다. 기존에는 아�
 ## Deploy to server
 
 ```yaml
+{% raw %}
 # appleboy/ssh-action@master 액션을 사용하여 지정한 서버에 ssh로 접속하고, script를 실행합니다.
       # 실행 시, docker-compose를 사용합니다.
       # useranme : ubuntu 우분투 기반 ec2 일 경우 기본이름
@@ -263,6 +276,7 @@ DockerHub 에 도커이미지를 푸시해주는 과정이다. 기존에는 아�
             cp -f ./src/main/resources/backend-submodule/docker-compose-dev.yml .
             rm -r src
             docker-compose -f docker-compose-dev.yml up -d
+{% endraw %}
 ```
 
 EC2 에서 Springboot 를 띄우는 과정이다. username 의 경우 EC2 ubuntu 라면 기본값으로 ubuntu 로 되어있다. EC2 여도 다른 이미지 기반이면 (Amazon Linux, MacOS 등) 이면 기본값이 다 다르다. KCS_HOST_DEV 의 경우 EC2 생성시 퍼블릭 호스트 이름이다. 예시로 `ec2-6-35-23-114.ap-northeast-2.compute.amazonaws.com` 이런형식이다. KCS_KEY_DEV 의 경우 EC2 생성시에 .pem 키 값이다. 맥이라면 cat kcs.pem 하면 키 값이 나오는데 
@@ -285,6 +299,7 @@ secretkeysecretkeysecretkeysecretkeysecretkeysecretkey
 ## Dockerfile.dev V1
 
 ```yaml
+{% raw %}
 FROM openjdk:17-alpine
 ARG JAR_FILE=build/libs/*.jar
 ARG SPRING_PROFILE=dev
@@ -294,6 +309,7 @@ COPY ${JAR_FILE} app.jar
 ENV spring_profile=${SPRING_PROFILE}
 
 ENTRYPOINT ["java", "-Dspring.profiles.active=${spring_profile}", "-Duser.timezone=Asia/Seoul", "-jar", "/app.jar"]
+{% endraw %}
 ```
 
 첫번째 도커파일로는 위에꺼를 사용했다. `openjdk:17-alpine` 의 경우 -alpine 이 붙어있는데 이는 좀 더 용량이 가벼운 파일이다. 100Mb 정도 작은데 조금이라도 용량을 줄이고자 사용했다. 이 외에도 여러방식으로 도커이미지 용량을 줄일 수 있는데 최대한 줄일 수 있으면 줄이는게 좋다. 
@@ -303,6 +319,7 @@ ENTRYPOINT ["java", "-Dspring.profiles.active=${spring_profile}", "-Duser.timezo
 ## Dockerfile.dev V2
 
 ```yaml
+{% raw %}
 FROM openjdk:17-alpine as builder
 WORKDIR app
 ARG JAR_FILE=build/libs/*.jar
@@ -317,6 +334,7 @@ COPY --from=builder app/snapshot-dependencies/ ./
 COPY --from=builder app/application/ ./
 
 ENTRYPOINT ["java", "-Dspring.profiles.active=${ACTIVE_SPRING_PROFILE}", "-Duser.timezone=Asia/Seoul", "org.springframework.boot.loader.launch.JarLauncher"]
+{% endraw %}
 ```
 
 도커 파일을 좀 더 효율적으로 실행시키기위해 변경했다. jar 파일을 4개의 레이어로 추출해 레이어별로 복사하는 과정을 거쳤다. 도커는 캐싱을 해두는데 변경이 되지 않았다면 캐싱을 활용한다. 그러니 변경이 잦은 부분을 최대한 늦게 복사하도록 한다. 

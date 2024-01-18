@@ -19,6 +19,7 @@ Github Action 에서 테스트를 적용할려면 `.github` 폴더 안에 `workf
 ### 파일 코드
 
 ```yaml
+{% raw %}
 name: action-test
 
 # 하기 내용에 해당하는 이벤트 발생 시 github action 동작
@@ -83,6 +84,7 @@ jobs:
         if: ${{ always() }}
         with:
           report_paths: build/test-results/test/TEST-*.xml
+{% endraw %}
 ```
 
 ## on
@@ -118,6 +120,7 @@ on 은 어떤 조건에서 해당 파일이 작동할지 적어주는 것이다.
 ## 캐시 적용
 
 ```yaml
+{% raw %}
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with: # 캐시로 사용될 경로 설정
@@ -127,6 +130,7 @@ on 은 어떤 조건에서 해당 파일이 작동할지 적어주는 것이다.
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }} # 캐시 키 설정
           restore-keys: |
             ${{ runner.os }}-gradle- # 복원 키 설정
+{% endraw %}
 ```
 
 해당 과정은 필수 과정은 아니다. path 에 적힌 `~/.gradle/caches`, `~/.gradle/wrapper` 를 (의존성파일) 을 캐싱해두어 다음에 실행할때 캐싱된 파일을 이용해 빌드 시간을 좀 더 줄일 수 있다. 30% 가량 빌드시간을 줄 일 수 있는것으로 보인다. 
@@ -210,7 +214,7 @@ H2 는 매우 가벼운 DB 라 속도가 빠르다는 장점이 있지만, 그�
           container port: 3306
           mysql database: 'nainga_test'
           mysql user: 'test'
-          mysql password: ${{ secrets.DB_PASSWORD }}
+          mysql password: $\{\{ secrets.DB_PASSWORD \}\}
 ```
 
 해당 코드를 추가하면 Github Action 에서 MySql 이미지를 가져와 띄운다. 그래서 h2 를 사용할때보다 시간이 좀 걸린다(10초 정도 더?) 
@@ -231,7 +235,7 @@ H2 는 매우 가벼운 DB 라 속도가 빠르다는 장점이 있지만, 그�
   # 테스트 후 Result를 보기위해 Publish Unit Test Results step 추가
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
-        if: ${{ always() }}  # 테스트가 실패하여도 Report를 보기 위해 `always`로 설정
+        if: $\{\{ always() \}\}  # 테스트가 실패하여도 Report를 보기 위해 `always`로 설정
         with:
           files: build/test-results/test/TEST-*.xml # 로컬에 저장할 위치
 ```
@@ -254,7 +258,7 @@ H2 는 매우 가벼운 DB 라 속도가 빠르다는 장점이 있지만, 그�
 ```yaml
       - name: Add comments to a pull request
         uses: mikepenz/action-junit-report@v3
-        if: ${{ always() }}
+        if: $\{\{ always() \}\}
         with:
           report_paths: build/test-results/test/TEST-*.xml
 ```
@@ -306,6 +310,7 @@ repository secrets 키는 다른사람이 볼 수 없다. 그래서 여기에 �
 action-test 파일을 아래와 같이 수정한다.
 
 ```yaml
+{% raw %}
 name: action-test
 
 # 하기 내용에 해당하는 이벤트 발생 시 github action 동작
@@ -380,6 +385,7 @@ jobs:
         if: ${{ always() }}
         with:
           report_paths: build/test-results/test/TEST-*.xml
+{% endraw %}
 ```
 
 위는 전체코드이고 추가된 코드는 아래와 같다.
@@ -393,7 +399,8 @@ jobs:
 
   # secrets 값 복사
   run: |
-    echo "google-key: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAME
+    echo "google-key: $GOOGLE_API_KEY" >> $OCCUPY_SECRET_DIR/$OCCUPY_SECRET_DIR_FILE_NAM
+
 ```
 
 Repository secrets 에 등록한 키는 `$\{\{ secrets.XXX \}\}` 를 통해 접근할 수 있다. 등록해둔 GOOGLE_API_KEY 를 쓸려면 `$\{\{ secrets.GOOGLE_API_KEY \}\}` 이렇게 적으면 되는것이다.
@@ -436,6 +443,7 @@ springboot 에서 test 를 할때, resources 에 있는 파일의 경우 test �
 3번의 서브모듈을 사용하는것은 처음보는 글일것이다. 해당글은 [서브모듈이란?](../GithubAction2) 글을 참고하면 좋다. 서브모듈을 사용하면 좀 더 설정값을 편하게 관리할 수 있다.  
 
 ```yaml
+{% raw %}
 name: action-test
 
 # 하기 내용에 해당하는 이벤트 발생 시 github action 동작
@@ -514,7 +522,7 @@ jobs:
         if: ${{ always() }}
         with:
           report_paths: build/test-results/test/TEST-*.xml
-
+{% endraw %}
 ```
 
 ## BLOCKING 설정
