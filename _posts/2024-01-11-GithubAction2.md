@@ -160,7 +160,7 @@ Github Action 에서 Repository 를 가져오는 과정이다. 여기서 눈여�
 
 ### 주의점3
 
-Intellij 에서 submodule 을 Directory Mapping 설정해주면서 root 에서 커밋을 할 수 있도록 했었다. 그러다보니 root 에서 커밋해주고 reset 으로 되돌아가면 submodule 이 꼬이는것 같다. 그래서 commit 할려고 할때 detached HEAD 가 뜨면서 커밋이 안된적이 있다. 이럴때는 submodule 디렉토리로 이동해서보면 branch 가 main 이 아닌 HEAD detached 를 가리키고 있는데 main 으로 브랜치를 변경해주면 된다. 그러면 변경이 있어서 안될 수 있는데 그럴때는 push 하고 바꿔주면 된다.
+Intellij 에서 submodule 을 Directory Mapping 설정해주면서 root 에서 커밋을 할 수 있도록 했었다. 그러다보니 root 에서 커밋해주고 reset 으로 되돌아가면 submodule 이 꼬이는것 같다. 그래서 commit 할려고 할때 detached HEAD 가 뜨면서 커밋이 안된적이 있다. 이럴때는 submodule 디렉토리로 이동해서보면 branch 가 main 이 아닌 HEAD detached 를 가리키고 있는데 main 으로 브랜치를 변경해주면 된다. 그러면 변경이 있어서 안될 수 있는데 그럴때는 pull 하거나 push 하고 바꿔주면 된다.
 
 ## Docker buildx
 
